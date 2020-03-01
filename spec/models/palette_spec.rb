@@ -1,7 +1,6 @@
-require 'spec_helper'
+require "spec_helper"
 
 describe Paleta::Palette do
-
   it "should initialize with a set of Colors" do
     c1 = Paleta::Color.new(13, 57, 182)
     c2 = Paleta::Color.new(94, 161, 235)
@@ -11,7 +10,7 @@ describe Paleta::Palette do
   it "should not initialize if an object in the set is not a Color" do
     c1 = Paleta::Color.new(13, 57, 182)
     c2 = 13
-    expect{ Paleta::Palette.new(c1, c2) }.to raise_error(ArgumentError)
+    expect { Paleta::Palette.new(c1, c2) }.to raise_error(ArgumentError)
   end
 
   it "should add Colors" do
@@ -35,7 +34,7 @@ describe Paleta::Palette do
     c1 = Paleta::Color.new(13, 57, 182)
     c2 = Paleta::Color.new(94, 161, 235)
     palette = Paleta::Palette.new(c1, c2)
-    c = palette.pop()
+    c = palette.pop
     c.should == c2
     palette.include?(c2).should be false
   end
@@ -136,7 +135,7 @@ describe Paleta::Palette do
 
   it "should generate a new Palette of shades of a single Color" do
     color = Paleta::Color.new(:hex, "ff0000")
-    palette = Paleta::Palette.generate(:from => :color, :color => color, :size => 5)
+    palette = Paleta::Palette.generate(from: :color, color: color, size: 5)
     palette.size.should == 5
     palette.each do |p|
       p.hue.should == color.hue
@@ -151,7 +150,7 @@ describe Paleta::Palette do
 
   it "should generate a new Palette of Colors analogous to the seed Color" do
     color = Paleta::Color.new(:hex, "0066cc")
-    palette = Paleta::Palette.generate(:type => :analogous, :from => :color, :color => color, :size => 5)
+    palette = Paleta::Palette.generate(type: :analogous, from: :color, color: color, size: 5)
     palette.size.should == 5
     palette.each do |p|
       p.lightness.should == color.lightness
@@ -166,7 +165,7 @@ describe Paleta::Palette do
 
   it "should generate a new Palette of Colors monochromatic to the seed Color" do
     color = Paleta::Color.new(:hex, "0066cc")
-    palette = Paleta::Palette.generate(:type => :monochromatic, :from => :color, :color => color, :size => 5)
+    palette = Paleta::Palette.generate(type: :monochromatic, from: :color, color: color, size: 5)
     palette.size.should == 5
     palette.each do |p|
       p.hue.should == color.hue
@@ -180,13 +179,13 @@ describe Paleta::Palette do
   end
 
   it "should generate a new Palette of random Colors" do
-    palette = Paleta::Palette.generate(:type => :random, :size => 5)
+    palette = Paleta::Palette.generate(type: :random, size: 5)
     palette.size.should == 5
   end
 
   it "should generate a new complementary Palette from the seed Color" do
     color = Paleta::Color.new(:hex, "0066cc")
-    palette = Paleta::Palette.generate(:type => :complementary, :from => :color, :color => color, :size => 5)
+    palette = Paleta::Palette.generate(type: :complementary, from: :color, color: color, size: 5)
     palette.size.should == 5
     palette.each do |c|
       c.lightness.should == color.lightness
@@ -196,7 +195,7 @@ describe Paleta::Palette do
 
   it "should generate a new triad Palette from the seed Color" do
     color = Paleta::Color.new(:hex, "0066cc")
-    palette = Paleta::Palette.generate(:type => :triad, :from => :color, :color => color, :size => 5)
+    palette = Paleta::Palette.generate(type: :triad, from: :color, color: color, size: 5)
     palette.size.should == 5
     palette.each do |c|
       c.lightness.should == color.lightness
@@ -206,7 +205,7 @@ describe Paleta::Palette do
 
   it "should generate a new tetrad Palette from the seed Color" do
     color = Paleta::Color.new(:hex, "0066cc")
-    palette = Paleta::Palette.generate(:type => :tetrad, :from => :color, :color => color, :size => 5)
+    palette = Paleta::Palette.generate(type: :tetrad, from: :color, color: color, size: 5)
     palette.size.should == 5
     palette.each do |c|
       c.lightness.should == color.lightness
@@ -216,7 +215,7 @@ describe Paleta::Palette do
 
   it "should generate a new split-complement Palette from the seed Color" do
     color = Paleta::Color.new(:hex, "0066cc")
-    palette = Paleta::Palette.generate(:type => :split_complement, :from => :color, :color => color, :size => 5)
+    palette = Paleta::Palette.generate(type: :split_complement, from: :color, color: color, size: 5)
     palette.size.should == 5
     palette.each do |c|
       c.lightness.should == color.lightness
@@ -226,9 +225,9 @@ describe Paleta::Palette do
 
   unless defined?(JRUBY_VERSION)
     it "should generate a Palette from an image" do
-      path = File.join(File.dirname(__FILE__), '..', 'images/test.jpg')
+      path = File.join(File.dirname(__FILE__), "..", "images/test.jpg")
       size = 5
-      palette = Paleta::Palette.generate(:from => :image, :image => path, :size => size)
+      palette = Paleta::Palette.generate(from: :image, image: path, size: size)
       palette.size.should == size
     end
 
@@ -236,15 +235,15 @@ describe Paleta::Palette do
       # stub Paleta.rmagick_available? to return false
       allow(Paleta).to receive(:rmagick_available?).and_return(false)
 
-      path = File.join(File.dirname(__FILE__), '..', 'images/test.jpg')
+      path = File.join(File.dirname(__FILE__), "..", "images/test.jpg")
       size = 5
-      expect do
-        Paleta::Palette.generate(:from => :image, :image => path, :size => size)
-      end.to raise_error(Paleta::MissingDependencyError)
+      expect {
+        Paleta::Palette.generate(from: :image, image: path, size: size)
+      }.to raise_error(Paleta::MissingDependencyError)
     end
 
     it "should raise an error when generating a Palette from an invalid image" do
-      expect{ Paleta::Palette.generate(:from => :image, :image => "/no/image.here") }.to raise_error(RuntimeError)
+      expect { Paleta::Palette.generate(from: :image, image: "/no/image.here") }.to raise_error(RuntimeError)
     end
   end
 
@@ -257,6 +256,6 @@ describe Paleta::Palette do
     palette.to_array.should == rgb_palette_array
     palette.to_array(:rgb).should == rgb_palette_array
     palette.to_array(:hsl).should == hsl_palette_array
-    palette.to_array(:hex).should == ['0D39B6', '5EA1EB']
+    palette.to_array(:hex).should == %w(0D39B6 5EA1EB)
   end
 end

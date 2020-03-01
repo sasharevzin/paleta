@@ -1,4 +1,4 @@
-require 'paleta/core_ext/math'
+require "paleta/core_ext/math"
 
 module Paleta
   # Represents a color
@@ -38,14 +38,14 @@ module Paleta
     def initialize(*args)
       if args.length == 1 && args[0].is_a?(Color)
         args[0].instance_variables.each do |key|
-          self.send("#{key[1..key.length]}=".to_sym, args[0].send("#{key[1..key.length]}"))
+          send("#{key[1..key.length]}=".to_sym, args[0].send((key[1..key.length]).to_s))
         end
       elsif args.length == 2 && args[0] == :hex && args[1].is_a?(String)
         # example: new(:hex, "336699")
         # example: new(:hex, "#336699")
         # example: new(:hex, "#fff")
         color_hex = args[1]
-        color_hex = color_hex[1..-1] if color_hex.start_with?('#')
+        color_hex = color_hex[1..-1] if color_hex.start_with?("#")
 
         # These are all string operations to make a "fea" into a "ffeeaa"
         color_hex = color_hex[0] * 2 + color_hex[1] * 2 + color_hex[2] * 2 if color_hex.length == 3
@@ -54,12 +54,12 @@ module Paleta
       elsif args.length == 3 && args[0].is_a?(Numeric) && args[1].is_a?(Numeric) && args[2].is_a?(Numeric)
         # example: new(235, 129, 74)
         rgb_init(args[0], args[1], args[2])
-      elsif args.length == 4 && [:rgb, :hsl].include?(args[0]) && args[1].is_a?(Numeric) && args[2].is_a?(Numeric) && args[3].is_a?(Numeric)
+      elsif args.length == 4 && %i(rgb hsl).include?(args[0]) && args[1].is_a?(Numeric) && args[2].is_a?(Numeric) && args[3].is_a?(Numeric)
         # example: new(:hsl, 320, 96, 74)
         rgb_init(args[1], args[2], args[3]) if args[0] == :rgb
         # example: new(:rgb, 235, 129, 74)
         hsl_init(args[1], args[2], args[3]) if args[0] == :hsl
-      elsif args.length == 0
+      elsif args.empty?
         # example: new()
         rgb_init(0, 0, 0)
       else
@@ -105,6 +105,7 @@ module Paleta
 
     def hex=(val)
       raise(ArgumentError, "Invalid Hex String") unless val.length == 6 && /^[[:xdigit:]]+$/ === val
+
       @hex = val.upcase
       @red = val[0..1].hex
       @green = val[2..3].hex
@@ -113,40 +114,40 @@ module Paleta
     end
 
     def hsl
-      [self.hue.to_i, self.saturation.to_i, self.lightness.to_i]
+      [hue.to_i, saturation.to_i, lightness.to_i]
     end
 
     def hsv
-      hh = self.hue / 100.0
-      ss = self.saturation / 100.0
-      ll = self.lightness / 100.0
+      hh = hue / 100.0
+      ss = saturation / 100.0
+      ll = lightness / 100.0
 
       h = hh
-      ll = ll * 2
-      ss = ss * ((ll <= 1 ? ll : 2) - ll)
+      ll *= 2
+      ss *= ((ll <= 1 ? ll : 2) - ll)
       v = (ll + ss) / 2
       s = (2 * ss) / (ll + ss)
 
-      [self.hue.to_i, self.saturation.to_i, (v*100).to_i]
+      [hue.to_i, saturation.to_i, (v * 100).to_i]
     end
 
     def family
-      h, s, v = self.hsv
+      h, s, v = hsv
       family = nil
 
       # Find if we have Black or White
-      if 0 <= s && s <= 5
-        if 0 <= v && v < 10
-          return 'black'
-        elsif 10 <= v && v < 95
-          return 'gray'
+      if s >= 0 && s <= 5
+        if v >= 0 && v < 10
+          return "black"
+        elsif v >= 10 && v < 95
+          return "gray"
         else
-          return 'white'
+          return "white"
         end
       end
 
       # Find color family base on Hue
-      if 0 <= h && h < 82
+      if h >= 0 && h < 82
 
         # We first check for Brown and Beige which are special
         #brown_v = 65.839-0.312*h
@@ -159,56 +160,56 @@ module Paleta
         #print 'beige_v and s: ', beige_v, beige_s
 
         # Check Hue by value
-        if 0 <= h && h < 16
-          family = 'red'
-        elsif 16 <= h && h < 46 # In the xls we see 10-55
-          if 40 < s && s < 60
-            family = 'brown'
-          elsif 20 < s && s < 41
-            family = 'beige'
+        if h >= 0 && h < 16
+          family = "red"
+        elsif h >= 16 && h < 46 # In the xls we see 10-55
+          if s > 40 && s < 60
+            family = "brown"
+          elsif s > 20 && s < 41
+            family = "beige"
           end
-          family = 'orange'
-        elsif 46 <= h && h < 66 # In the xls we see 45-65
-          if 40 < s && s < 50
-            family = 'brown'
-          elsif 20 < s && s < 41
-            family = 'beige'
+          family = "orange"
+        elsif h >= 46 && h < 66 # In the xls we see 45-65
+          if s > 40 && s < 50
+            family = "brown"
+          elsif s > 20 && s < 41
+            family = "beige"
           end
-          family = 'yellow'
-        elsif 66 <= h && h < 121
-          family = 'yellow/green'
+          family = "yellow"
+        elsif h >= 66 && h < 121
+          family = "yellow/green"
         end
-      elsif 66 <= h && h < 118
-        family = 'yellow/green'
-      elsif 118 <= h && h < 176
-        family = 'green'
-      elsif 176 <= h && h < 196
-        family = 'cyan'
-      elsif 196 <= h && h < 266
-        family = 'blue'
-      elsif 266 <= h && h < 296
-        family = 'violet'
-      elsif 296 <= h && h < 320
-        family = 'magenta'
-      elsif 320 <= h && h < 361
-        family = 'red'
+      elsif h >= 66 && h < 118
+        family = "yellow/green"
+      elsif h >= 118 && h < 176
+        family = "green"
+      elsif h >= 176 && h < 196
+        family = "cyan"
+      elsif h >= 196 && h < 266
+        family = "blue"
+      elsif h >= 266 && h < 296
+        family = "violet"
+      elsif h >= 296 && h < 320
+        family = "magenta"
+      elsif h >= 320 && h < 361
+        family = "red"
       end
 
       family
     end
 
     def shade
-      case(self.lightness.to_i)
-        when 10..39
-          'dark'
-        when 40..59
-          'medium'
-        when 60..89
-          'light'
-        when 90..100
-          'very light'
-        else
-          'very dark'
+      case lightness.to_i
+      when 10..39
+        "dark"
+      when 40..59
+        "medium"
+      when 60..89
+        "light"
+      when 90..100
+        "very light"
+      else
+        "very dark"
       end
     end
 
@@ -216,14 +217,14 @@ module Paleta
     # @param [Color] color color to compare
     # @return [Boolean]
     def ==(color)
-      color.is_a?(Color) ? (self.hex == color.hex) : false
+      color.is_a?(Color) ? (hex == color.hex) : false
     end
 
     # Create a copy of the receiver and lighten it by a percentage
     # @param [Number] percentage percentage by which to lighten the {Color}
     # @return [Color] a lightened copy of the receiver
     def lighten(percentage = 5)
-      copy = self.dup
+      copy = dup
       copy.lighten!(percentage)
       copy
     end
@@ -243,7 +244,7 @@ module Paleta
     # @param [Number] percentage percentage by which to darken the {Color}
     # @return [Color] a darkened copy of the receiver
     def darken(percentage = 5)
-      copy = self.dup
+      copy = dup
       copy.darken!(percentage)
       copy
     end
@@ -316,7 +317,7 @@ module Paleta
     # @param [Color] color color to calculate the similarity to
     # @return [Number] a value in [0..1] with 0 being identical and 1 being as dissimilar as possible
     def similarity(color)
-      distance({ :r => @red, :g => @green, :b => @blue}, { :r => color.red, :g => color.green, :b => color.blue}) / sqrt(3 * (255 ** 2))
+      distance({ r: @red, g: @green, b: @blue }, r: color.red, g: color.green, b: color.blue) / sqrt(3 * (255**2))
     end
 
     # Return an array representation of a {Color} instance,
@@ -325,9 +326,9 @@ module Paleta
     def to_array(color_model = :rgb)
       color_model = color_model.to_sym unless color_model.is_a? Symbol
       if color_model == :rgb
-        array = [self.red, self.green, self.blue]
+        array = [red, green, blue]
       elsif color_model == :hsl
-        array = [self.hue, self.saturation, self.lightness]
+        array = [hue, saturation, lightness]
       else
         raise(ArgumentError, "Argument must be :rgb or :hsl")
       end
@@ -353,9 +354,21 @@ module Paleta
     end
 
     def update_hsl
-      r = @red / 255.0 rescue 0.0
-      g = @green / 255.0 rescue 0.0
-      b = @blue / 255.0 rescue 0.0
+      r = begin
+            @red / 255.0
+          rescue StandardError
+            0.0
+          end
+      g = begin
+            @green / 255.0
+          rescue StandardError
+            0.0
+          end
+      b = begin
+            @blue / 255.0
+          rescue StandardError
+            0.0
+          end
 
       min = [r, g, b].min
       max = [r, g, b].max
@@ -363,17 +376,17 @@ module Paleta
 
       h = 0
       l = (max + min) / 2.0
-      if ![1, 0].include?(l) && delta / 2.0  == l
-        s = 1.0
-      else
-        s = ((l == 0 || l == 1) ? 0 : (delta / (1 - (2 * l - 1).abs)))
-      end
+      s = if ![1, 0].include?(l) && delta / 2.0 == l
+            1.0
+          else
+            (l == 0 || l == 1 ? 0 : (delta / (1 - (2 * l - 1).abs)))
+          end
 
       if delta != 0
         case max
-        when r; h = ((g - b) / delta) % 6
-        when g; h = ((b - r) / delta) + 2
-        when b; h = ((r - g) / delta) + 4
+        when r then h = ((g - b) / delta) % 6
+        when g then h = ((b - r) / delta) + 2
+        when b then h = ((r - g) / delta) + 4
         end
       end
 
@@ -384,22 +397,48 @@ module Paleta
     end
 
     def update_rgb
-      h = @hue / 60.0 rescue 0.0
-      s = @saturation / 100.0 rescue 0.0
-      l = @lightness / 100.0 rescue 0.0
+      h = begin
+            @hue / 60.0
+          rescue StandardError
+            0.0
+          end
+      s = begin
+            @saturation / 100.0
+          rescue StandardError
+            0.0
+          end
+      l = begin
+            @lightness / 100.0
+          rescue StandardError
+            0.0
+          end
 
       d1 = (1 - (2 * l - 1).abs) * s
       d2 = d1 * (1 - (h % 2 - 1).abs)
       d3 = l - (d1 / 2.0)
 
       case h.to_i
-      when 0; @red, @green, @blue = d1, d2, 0
-      when 1; @red, @green, @blue = d2, d1, 0
-      when 2; @red, @green, @blue = 0, d1, d2
-      when 3; @red, @green, @blue = 0, d2, d1
-      when 4; @red, @green, @blue = d2, 0, d1
-      when 5; @red, @green, @blue = d1, 0, d2
-      else; @red, @green, @blue = 0, 0, 0
+      when 0 then @red = d1
+                  @green = d2
+                  @blue = 0
+      when 1 then @red = d2
+                  @green = d1
+                  @blue = 0
+      when 2 then @red = 0
+                  @green = d1
+                  @blue = d2
+      when 3 then @red = 0
+                  @green = d2
+                  @blue = d1
+      when 4 then @red = d2
+                  @green = 0
+                  @blue = d1
+      when 5 then @red = d1
+                  @green = 0
+                  @blue = d2
+      else; @red = 0
+            @green = 0
+            @blue = 0
       end
 
       @red = (255 * (@red + d3)).to_i
@@ -408,9 +447,21 @@ module Paleta
     end
 
     def update_hex
-      r = @red.to_i.to_s(16) rescue "00"
-      g = @green.to_i.to_s(16) rescue "00"
-      b = @blue.to_i.to_s(16) rescue "00"
+      r = begin
+            @red.to_i.to_s(16)
+          rescue StandardError
+            "00"
+          end
+      g = begin
+            @green.to_i.to_s(16)
+          rescue StandardError
+            "00"
+          end
+      b = begin
+            @blue.to_i.to_s(16)
+          rescue StandardError
+            "00"
+          end
       r = "0#{r}" if r.length < 2
       g = "0#{g}" if g.length < 2
       b = "0#{b}" if b.length < 2

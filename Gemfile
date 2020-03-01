@@ -1,7 +1,7 @@
-source 'https://rubygems.org'
+source "https://rubygems.org"
 
 gemspec
 
 platforms :ruby do
-  gem 'rmagick'
+  gem "rmagick"
 end

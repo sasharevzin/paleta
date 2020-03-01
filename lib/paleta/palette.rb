@@ -1,4 +1,4 @@
-require 'paleta/core_ext/math'
+require "paleta/core_ext/math"
 
 module Paleta
   # Represents a palette, a collection of {Color}s
@@ -13,7 +13,7 @@ module Paleta
     # @return [Palette] A new instance of {Palette}
     def initialize(*args)
       @colors = []
-      colors = (args.length == 1 && args[0].is_a?(Array)) ? args[0] : args
+      colors = args.length == 1 && args[0].is_a?(Array) ? args[0] : args
       colors.each { |color| self << color }
     end
 
@@ -114,7 +114,7 @@ module Paleta
     # Invert each {Color} in the receiver by a percentage
     # @return [Palette] self
     def invert!
-      @colors.each { |color| color.invert! }
+      @colors.each(&:invert!)
       self
     end
 
@@ -122,21 +122,26 @@ module Paleta
     # @param [Palette] palette palette to calculate the similarity to
     # @return [Number] a value in [0..1] with 0 being identical and 1 being as dissimilar as possible
     def similarity(palette)
-      r, a, b = [], [], []
-      (0..1).each { |i| a[i], b[i] = {}, {} }
+      r = []
+      a = []
+      b = []
+      (0..1).each do |i|
+        a[i] = {}
+        b[i] = {}
+      end
 
       # r[i] is a hash of the multiple regression of the Palette in RGB space
       r[0] = fit
       r[1] = palette.fit
 
       [0, 1].each do |i|
-        [:x, :y, :z].each do |k|
+        %i(x y z).each do |k|
           a[i][k] = 0 * r[i][:slope][k] + r[i][:offset][k]
           b[i][k] = 255 * r[i][:slope][k] + r[i][:offset][k]
         end
       end
 
-      d_max = sqrt(3 * (65025 ** 2))
+      d_max = sqrt(3 * (65_025**2))
 
       d1 = distance(a[0], a[1]) / d_max
       d2 = distance(b[0], b[1]) / d_max
@@ -153,12 +158,9 @@ module Paleta
     # @option opts [Number] :size the number of {Color}s to generate for the {Palette}
     # @return [Palette] A new instance of {Palette}
     def self.generate(opts = {})
-
       size = opts[:size] || 5
 
-      if !opts[:type].nil? && opts[:type].to_sym == :random
-        return self.generate_random_from_color(opts[:color], size)
-      end
+      return generate_random_from_color(opts[:color], size) if !opts[:type].nil? && opts[:type].to_sym == :random
 
       unless (opts[:from].to_sym == :color && !opts[:color].nil?) || (opts[:from].to_sym == :image && !opts[:image].nil?)
         return raise(ArgumentError, 'You must pass :from and it must be either :color or :image, then you must pass :image => "/path/to/img" or :color => color')
@@ -166,20 +168,20 @@ module Paleta
 
       if opts[:from].to_sym == :image
         path = opts[:image]
-        return self.generate_from_image(path, size)
+        return generate_from_image(path, size)
       end
 
       color = opts[:color]
       type = opts[:type] || :shades
 
       case type
-      when :analogous; self.generate_analogous_from_color(color, size)
-      when :complementary; self.generate_complementary_from_color(color, size)
-      when :monochromatic; self.generate_monochromatic_from_color(color, size)
-      when :shades; self.generate_shades_from_color(color, size)
-      when :split_complement; self.generate_split_complement_from_color(color, size)
-      when :tetrad; self.generate_tetrad_from_color(color, size)
-      when :triad; self.generate_triad_from_color(color, size)
+      when :analogous then generate_analogous_from_color(color, size)
+      when :complementary then generate_complementary_from_color(color, size)
+      when :monochromatic then generate_monochromatic_from_color(color, size)
+      when :shades then generate_shades_from_color(color, size)
+      when :split_complement then generate_split_complement_from_color(color, size)
+      when :tetrad then generate_tetrad_from_color(color, size)
+      when :triad then generate_triad_from_color(color, size)
       else raise(ArgumentError, "Palette type is not defined. Try :analogous, :monochromatic, :shades, or :random")
       end
     end
@@ -189,10 +191,10 @@ module Paleta
     # @return [Array] an Array of Arrays where each sub-Array is a representation of a {Color} object in a {Palette} instance
     def to_array(color_model = :rgb)
       color_model = color_model.to_sym unless color_model.is_a? Symbol
-      if [:rgb, :hsl].include?(color_model)
+      if %i(rgb hsl).include?(color_model)
         array = colors.map { |c| c.to_array(color_model) }
       elsif color_model == :hex
-        array = colors.map{ |c| c.hex }
+        array = colors.map(&:hex)
       else
         raise(ArgumentError, "Argument must be :rgb, :hsl, or :hex")
       end
@@ -201,9 +203,9 @@ module Paleta
 
     def fit
       # create a 3xn matrix where n = @colors.size to represent the set of colors
-      reds = @colors.map { |c| c.red }
-      greens = @colors.map { |c| c.green }
-      blues = @colors.map { |c| c.blue }
+      reds = @colors.map(&:red)
+      greens = @colors.map(&:green)
+      blues = @colors.map(&:blue)
       multiple_regression(reds, greens, blues)
     end
 
@@ -218,11 +220,11 @@ module Paleta
         image = Magick::ImageList.new(path)
 
         # quantize image to the nearest power of 2 greater the desired palette size
-        quantized_image = image.quantize((Math.sqrt(size).ceil ** 2), Magick::RGBColorspace)
+        quantized_image = image.quantize((Math.sqrt(size).ceil**2), Magick::RGBColorspace)
         colors = quantized_image.color_histogram.sort { |a, b| b[1] <=> a[1] }[0..(size - 1)].map do |color|
           Paleta::Color.new(color[0].red / 256, color[0].green / 256, color[0].blue / 256)
         end
-        return Paleta::Palette.new(colors)
+        Paleta::Palette.new(colors)
       rescue Magick::ImageMagickError
         raise "Invalid image at " << path
       end
@@ -230,10 +232,11 @@ module Paleta
 
     def self.generate_analogous_from_color(color, size)
       raise(ArgumentError, "Passed argument is not a Color") unless color.is_a?(Color)
-      palette = self.new(color)
+
+      palette = new(color)
       step = 20
       below = (size / 2)
-      above = (size % 2 == 0) ? (size / 2) - 1 : (size / 2)
+      above = size.even? ? (size / 2) - 1 : (size / 2)
       below.times do |i|
         hue = color.hue - ((i + 1) * step)
         hue += 360 if hue < 0
@@ -249,31 +252,35 @@ module Paleta
 
     def self.generate_complementary_from_color(color, size)
       raise(ArgumentError, "Passed argument is not a Color") unless color.is_a?(Color)
+
       complement = color.complement
-      palette = self.new(color, complement)
+      palette = new(color, complement)
       add_monochromatic_in_hues_of_color(palette, color, size)
     end
 
     def self.generate_triad_from_color(color, size)
       raise(ArgumentError, "Passed argument is not a Color") unless color.is_a?(Color)
+
       color2 = Paleta::Color.new(:hsl, (color.hue + 120) % 360, color.saturation, color.lightness)
       color3 = Paleta::Color.new(:hsl, (color2.hue + 120) % 360, color2.saturation, color2.lightness)
-      palette = self.new(color, color2, color3)
+      palette = new(color, color2, color3)
       add_monochromatic_in_hues_of_color(palette, color, size)
     end
 
     def self.generate_tetrad_from_color(color, size)
       raise(ArgumentError, "Passed argument is not a Color") unless color.is_a?(Color)
+
       color2 = Paleta::Color.new(:hsl, (color.hue + 90) % 360, color.saturation, color.lightness)
       color3 = Paleta::Color.new(:hsl, (color2.hue + 90) % 360, color2.saturation, color2.lightness)
       color4 = Paleta::Color.new(:hsl, (color3.hue + 90) % 360, color3.saturation, color3.lightness)
-      palette = self.new(color, color2, color3, color4)
+      palette = new(color, color2, color3, color4)
       add_monochromatic_in_hues_of_color(palette, color, size)
     end
 
     def self.generate_monochromatic_from_color(color, size)
       raise(ArgumentError, "Passed argument is not a Color") unless color.is_a?(Color)
-      palette = self.new(color)
+
+      palette = new(color)
       step = (100 / size)
       saturation = color.saturation
       d = :down
@@ -291,7 +298,8 @@ module Paleta
 
     def self.generate_shades_from_color(color, size)
       raise(ArgumentError, "Passed argument is not a Color") unless color.is_a?(Color)
-      palette = self.new(color)
+
+      palette = new(color)
       step = (100 / size)
       lightness = color.lightness
       d = :down
@@ -309,35 +317,37 @@ module Paleta
 
     def self.generate_split_complement_from_color(color, size)
       raise(ArgumentError, "Passed argument is not a Color") unless color.is_a?(Color)
+
       color2 = Paleta::Color.new(:hsl, (color.hue + 150) % 360, color.saturation, color.lightness)
       color3 = Paleta::Color.new(:hsl, (color2.hue + 60) % 360, color2.saturation, color2.lightness)
-      palette = self.new(color, color2, color3)
+      palette = new(color, color2, color3)
       add_monochromatic_in_hues_of_color(palette, color, size)
     end
 
     def self.generate_random_from_color(color = nil, size)
-      palette = color.is_a?(Color) ? self.new(color) : self.new
-      r = Random.new(Time.now.sec)
-      until palette.size == size
-        palette << Paleta::Color.new(r.rand(0..255), r.rand(0..255), r.rand(0..255))
-      end
+      palette = color.is_a?(Color) ? new(color) : new
+      r = Random.new(Time.zone.now.sec)
+      palette << Paleta::Color.new(r.rand(0..255), r.rand(0..255), r.rand(0..255)) until palette.size == size
       palette
     end
 
     def self.add_monochromatic_in_hues_of_color(palette, color, size)
       raise(ArgumentError, "Second argument is not a Color") unless color.is_a?(Color)
-      hues = palette.map { |c| c.hue }
+
+      hues = palette.map(&:hue)
       step = ugap = dgap = 100 / size
       i = j = 0
       saturation = color.saturation
       until palette.size == size
-        if color.saturation + ugap < 100
-          saturation = color.saturation + ugap
-          ugap += step
-        else
-          saturation = color.saturation - dgap
-          dgap += step
-        end if j == 3 || j == 1
+        if j == 3 || j == 1
+          if color.saturation + ugap < 100
+            saturation = color.saturation + ugap
+            ugap += step
+          else
+            saturation = color.saturation - dgap
+            dgap += step
+          end
+        end
         new_color = Paleta::Color.new(:hsl, hues[i], saturation, color.lightness)
         palette << new_color unless palette.include?(new_color)
         i += 1; j += 1; i %= hues.size; j %= (2 * hues.size)

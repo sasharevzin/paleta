@@ -1,2 +1,2 @@
-require 'rspec'
-require 'paleta'
+require "rspec"
+require "paleta"
