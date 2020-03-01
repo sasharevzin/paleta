@@ -112,6 +112,106 @@ module Paleta
       update_hsl
     end
 
+    def hsl
+      [self.hue.to_i, self.saturation.to_i, self.lightness.to_i]
+    end
+
+    def hsv
+      hh = self.hue / 100.0
+      ss = self.saturation / 100.0
+      ll = self.lightness / 100.0
+
+      h = hh
+      ll = ll * 2
+      ss = ss * ((ll <= 1 ? ll : 2) - ll)
+      v = (ll + ss) / 2
+      s = (2 * ss) / (ll + ss)
+
+      [self.hue.to_i, self.saturation.to_i, (v*100).to_i]
+    end
+
+    def family
+      h, s, v = self.hsv
+      family = nil
+
+      # Find if we have Black or White
+      if 0 <= s && s <= 5
+        if 0 <= v && v < 10
+          return 'black'
+        elsif 10 <= v && v < 95
+          return 'gray'
+        else
+          return 'white'
+        end
+      end
+
+      # Find color family base on Hue
+      if 0 <= h && h < 82
+
+        # We first check for Brown and Beige which are special
+        #brown_v = 65.839-0.312*h
+        #beige_v = 93.767-0.169*h
+        #beige_s = 37.383-0.1759*h
+        #brown_s = 49.095-0.208*h
+        #beige_l = 37.383-0.1759*h
+        #brown_l = 65.839-0.312*h
+        #print 'brown_v and s: ', brown_v, brown_s
+        #print 'beige_v and s: ', beige_v, beige_s
+
+        # Check Hue by value
+        if 0 <= h && h < 16
+          family = 'red'
+        elsif 16 <= h && h < 46 # In the xls we see 10-55
+          if 40 < s && s < 60
+            family = 'brown'
+          elsif 20 < s && s < 41
+            family = 'beige'
+          end
+          family = 'orange'
+        elsif 46 <= h && h < 66 # In the xls we see 45-65
+          if 40 < s && s < 50
+            family = 'brown'
+          elsif 20 < s && s < 41
+            family = 'beige'
+          end
+          family = 'yellow'
+        elsif 66 <= h && h < 121
+          family = 'yellow/green'
+        end
+      elsif 66 <= h && h < 118
+        family = 'yellow/green'
+      elsif 118 <= h && h < 176
+        family = 'green'
+      elsif 176 <= h && h < 196
+        family = 'cyan'
+      elsif 196 <= h && h < 266
+        family = 'blue'
+      elsif 266 <= h && h < 296
+        family = 'violet'
+      elsif 296 <= h && h < 320
+        family = 'magenta'
+      elsif 320 <= h && h < 361
+        family = 'red'
+      end
+
+      family
+    end
+
+    def shade
+      case(self.lightness.to_i)
+        when 10..39
+          'dark'
+        when 40..59
+          'medium'
+        when 60..89
+          'light'
+        when 90..100
+          'very light'
+        else
+          'very dark'
+      end
+    end
+
     # Determine the equality of the receiver and another {Color}
     # @param [Color] color color to compare
     # @return [Boolean]
